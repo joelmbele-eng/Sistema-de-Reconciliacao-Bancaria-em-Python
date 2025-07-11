@@ -1,3 +1,4 @@
+![image alt](https://github.com/joelmbele-eng/Sistema-de-Reconciliacao-Bancaria-em-Python/blob/87d05425aeef793cac1d62727ce14d93fc9a9a5f/1.PNG)
  # Objetivo Principal
 Automatizar a reconciliação bancária e fornecer gestão contábil abrangente para empresas angolanas, garantindo conformidade com as normas contábeis locais.
 
