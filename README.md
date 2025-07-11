@@ -2,18 +2,25 @@
  # Objetivo Principal
 Automatizar a reconciliação bancária e fornecer gestão contábil abrangente para empresas angolanas, garantindo conformidade com as normas contábeis locais.
 
-✨ Funcionalidades Principais
+# Funcionalidades Principais
 🏦 Reconciliação Bancária Automatizada
+![image alt](https://github.com/joelmbele-eng/Sistema-de-Reconciliacao-Bancaria-em-Python/blob/4297ec408ab15f46be5b44de0d2e176c98092599/2.PNG)
 Conciliação automática entre extratos bancários e registros contábeis
+
 Suporte para principais bancos angolanos (BAI, BFA, BIC)
+
 Algoritmos inteligentes de correspondência com tolerância configurável
+
 Reconciliação manual quando necessário
-📋 Gestão Contábil Completa
+
+# Gestão Contábil Completa
 Conformidade com PGCA (Plano Geral de Contabilidade Angolano)
+
 Escrituração por partidas dobradas
 Lançamentos contábeis automatizados
 Livro razão e diário
-📊 Relatórios Financeiros
+# Relatórios Financeiros
+
 Balanço patrimonial automatizado
 Demonstração de resultados
 Fluxo de caixa histórico e projetado
