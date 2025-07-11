@@ -1,0 +1,326 @@
+[
+  {
+    "id": "B1",
+    "data": "2023-03-01T00:00:00",
+    "descricao": "Transferência recebida",
+    "origem": "BANCO",
+    "movimentos": [
+      {
+        "conta": "43",
+        "debito": 250000.0,
+        "credito": 0
+      },
+      {
+        "conta": "37",
+        "debito": 0,
+        "credito": 250000.0
+      }
+    ]
+  },
+  {
+    "id": "B3",
+    "data": "2023-03-03T00:00:00",
+    "descricao": "Pagamento fornecedor",
+    "origem": "BANCO",
+    "movimentos": [
+      {
+        "conta": "64",
+        "debito": -75000.0,
+        "credito": 0
+      },
+      {
+        "conta": "36",
+        "debito": 0,
+        "credito": -75000.0
+      }
+    ]
+  },
+  {
+    "id": "B5",
+    "data": "2023-03-05T00:00:00",
+    "descricao": "Recebimento cliente",
+    "origem": "BANCO",
+    "movimentos": [
+      {
+        "conta": "43",
+        "debito": 120000.0,
+        "credito": 0
+      },
+      {
+        "conta": "71",
+        "debito": 0,
+        "credito": 120000.0
+      }
+    ]
+  },
+  {
+    "id": "B7",
+    "data": "2023-03-10T00:00:00",
+    "descricao": "Pagamento salários",
+    "origem": "BANCO",
+    "movimentos": [
+      {
+        "conta": "64",
+        "debito": -180000.0,
+        "credito": 0
+      },
+      {
+        "conta": "36",
+        "debito": 0,
+        "credito": -180000.0
+      }
+    ]
+  },
+  {
+    "id": "B9",
+    "data": "2023-03-15T00:00:00",
+    "descricao": "Recebimento vendas",
+    "origem": "BANCO",
+    "movimentos": [
+      {
+        "conta": "45",
+        "debito": 320000.0,
+        "credito": 0
+      },
+      {
+        "conta": "71",
+        "debito": 0,
+        "credito": 320000.0
+      }
+    ]
+  },
+  {
+    "id": "B11",
+    "data": "2023-03-18T00:00:00",
+    "descricao": "Pagamento impostos",
+    "origem": "BANCO",
+    "movimentos": [
+      {
+        "conta": "64",
+        "debito": -95000.0,
+        "credito": 0
+      },
+      {
+        "conta": "36",
+        "debito": 0,
+        "credito": -95000.0
+      }
+    ]
+  },
+  {
+    "id": "B13",
+    "data": "2023-03-22T00:00:00",
+    "descricao": "Transferência entre contas",
+    "origem": "BANCO",
+    "movimentos": [
+      {
+        "conta": "43",
+        "debito": -50000.0,
+        "credito": 0
+      },
+      {
+        "conta": "37",
+        "debito": 0,
+        "credito": -50000.0
+      }
+    ]
+  },
+  {
+    "id": "B15",
+    "data": "2023-03-25T00:00:00",
+    "descricao": "Recebimento serviços prestados",
+    "origem": "BANCO",
+    "movimentos": [
+      {
+        "conta": "43",
+        "debito": 180000.0,
+        "credito": 0
+      },
+      {
+        "conta": "71",
+        "debito": 0,
+        "credito": 180000.0
+      }
+    ]
+  },
+  {
+    "id": "B17",
+    "data": "2023-03-28T00:00:00",
+    "descricao": "Pagamento aluguel",
+    "origem": "BANCO",
+    "movimentos": [
+      {
+        "conta": "64",
+        "debito": -120000.0,
+        "credito": 0
+      },
+      {
+        "conta": "36",
+        "debito": 0,
+        "credito": -120000.0
+      }
+    ]
+  },
+  {
+    "id": "B19",
+    "data": "2023-03-30T00:00:00",
+    "descricao": "Juros recebidos",
+    "origem": "BANCO",
+    "movimentos": [
+      {
+        "conta": "43",
+        "debito": 15000.0,
+        "credito": 0
+      },
+      {
+        "conta": "71",
+        "debito": 0,
+        "credito": 15000.0
+      }
+    ]
+  },
+  {
+    "id": "L21",
+    "data": "2023-03-03T00:00:00",
+    "descricao": "Pagamento fornecedor",
+    "origem": "LIVRO",
+    "movimentos": [
+      {
+        "conta": "64",
+        "debito": 75000.0,
+        "credito": 0
+      },
+      {
+        "conta": "36",
+        "debito": 0,
+        "credito": 75000.0
+      }
+    ]
+  },
+  {
+    "id": "L23",
+    "data": "2023-03-10T00:00:00",
+    "descricao": "Pagamento salários",
+    "origem": "LIVRO",
+    "movimentos": [
+      {
+        "conta": "64",
+        "debito": 180000.0,
+        "credito": 0
+      },
+      {
+        "conta": "36",
+        "debito": 0,
+        "credito": 180000.0
+      }
+    ]
+  },
+  {
+    "id": "L25",
+    "data": "2023-03-18T00:00:00",
+    "descricao": "Pagamento impostos",
+    "origem": "LIVRO",
+    "movimentos": [
+      {
+        "conta": "64",
+        "debito": 95000.0,
+        "credito": 0
+      },
+      {
+        "conta": "36",
+        "debito": 0,
+        "credito": 95000.0
+      }
+    ]
+  },
+  {
+    "id": "L27",
+    "data": "2023-03-22T00:00:00",
+    "descricao": "Transferência entre contas",
+    "origem": "LIVRO",
+    "movimentos": [
+      {
+        "conta": "43",
+        "debito": 50000.0,
+        "credito": 0
+      },
+      {
+        "conta": "37",
+        "debito": 0,
+        "credito": 50000.0
+      }
+    ]
+  },
+  {
+    "id": "L29",
+    "data": "2023-03-28T00:00:00",
+    "descricao": "Pagamento aluguel",
+    "origem": "LIVRO",
+    "movimentos": [
+      {
+        "conta": "64",
+        "debito": 120000.0,
+        "credito": 0
+      },
+      {
+        "conta": "36",
+        "debito": 0,
+        "credito": 120000.0
+      }
+    ]
+  },
+  {
+    "id": "L31",
+    "data": "2023-04-01T00:00:00",
+    "descricao": "Pagamento de fornecedor",
+    "origem": "LIVRO",
+    "movimentos": [
+      {
+        "conta": "64",
+        "debito": 50000.0,
+        "credito": 0
+      },
+      {
+        "conta": "36",
+        "debito": 0,
+        "credito": 50000.0
+      }
+    ]
+  },
+  {
+    "id": "L33",
+    "data": "2023-04-05T00:00:00",
+    "descricao": "Recebimento de cliente",
+    "origem": "LIVRO",
+    "movimentos": [
+      {
+        "conta": "43",
+        "debito": 75000.0,
+        "credito": 0
+      },
+      {
+        "conta": "71",
+        "debito": 0,
+        "credito": 75000.0
+      }
+    ]
+  },
+  {
+    "id": "L35",
+    "data": "2023-04-10T00:00:00",
+    "descricao": "Pagamento de salários",
+    "origem": "LIVRO",
+    "movimentos": [
+      {
+        "conta": "64",
+        "debito": 120000.0,
+        "credito": 0
+      },
+      {
+        "conta": "36",
+        "debito": 0,
+        "credito": 120000.0
+      }
+    ]
+  }
+]

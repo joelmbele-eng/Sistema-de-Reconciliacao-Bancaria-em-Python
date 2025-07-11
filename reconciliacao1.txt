@@ -1,0 +1,847 @@
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox, simpledialog
+import pandas as pd
+from datetime import datetime
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from reportlab.platypus import Image
+import os
+import sys
+import platform
+import subprocess
+import zipfile
+import tempfile
+import shutil
+import glob
+
+from banco_processor import ProcessadorBanco
+from relatorios import GeradorRelatorios
+from config import CONFIGURACOES
+from dashboard import DashboardAvancado
+from contabilidade import ContabilidadeAvancada
+from lancamentos_recorrentes import GerenciadorLancamentosRecorrentes
+from gerenciador_temas import GerenciadorTemas
+from configuracoes import Configuracoes
+from integracao_funcionalidades import IntegradorFuncionalidades
+
+
+class ReconciliacaoApp:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Sistema de Reconciliação Contábil - Angola")
+        self.root.geometry("1200x800")
+        
+        # Inicializações
+        self.dados_banco = None
+        self.dados_livro = None
+        self.gerador_relatorios = GeradorRelatorios()
+        self.contabilidade = ContabilidadeAvancada()
+        
+        # Novos módulos
+        self.gerenciador_temas = GerenciadorTemas(self)
+        self.configuracoes = Configuracoes(self)
+        self.lancamentos_recorrentes = GerenciadorLancamentosRecorrentes(self)
+        
+        # Aplicar tema inicial
+        tema_inicial = self.configuracoes.obter_config("sistema", "tema")
+        if tema_inicial:
+            self.gerenciador_temas.aplicar_tema(tema_inicial)
+        
+        self.setup_interface()
+        self.integrador = IntegradorFuncionalidades(self)
+        
+    def classificar_lancamentos_contabeis(self):
+        #
+        """Abre a interface para classificar lançamentos em contas contábeis"""
+        if self.dados_banco is None and self.dados_livro is None:
+            messagebox.showwarning("Aviso", "Importe os dados primeiro!")
+            return    
+        
+        self.contabilidade.dados_banco = self.dados_banco
+        self.contabilidade.dados_livro = self.dados_livro
+    
+    # Abrir o classificador de lançamentos
+        self.contabilidade.abrir_classificador_lancamentos(self.root)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    def setup_interface(self):
+        # Frame principal
+        self.frame_principal = ttk.Frame(self.root, padding="10")
+        self.frame_principal.pack(fill=tk.BOTH, expand=True)
+        
+        # Título
+        titulo = ttk.Label(self.frame_principal, 
+                         text="Sistema de Reconciliação Contábil - Angola",
+                         font=('Helvetica', 16, 'bold'))
+        titulo.pack(pady=10)
+        
+        # Área de botões
+        self.criar_area_botoes()
+        
+        # Área de estatísticas
+        self.criar_area_estatisticas()
+        
+        # Tabela principal
+        self.criar_tabela()
+        
+        # Menu
+        self.criar_menu()
+        
+    def abrir_dashboard(self):
+        if self.validar_dados():
+            DashboardAvancado(self.dados_banco, self.dados_livro)
+        
+    def criar_area_botoes(self):
+        frame_botoes = ttk.Frame(self.frame_principal)
+        frame_botoes.pack(fill=tk.X, pady=5)
+        
+        ttk.Button(frame_botoes, text="Importar Banco", 
+                  command=self.importar_banco).pack(side=tk.LEFT, padx=5)
+        ttk.Button(frame_botoes, text="Importar Livro", 
+                  command=self.importar_livro).pack(side=tk.LEFT, padx=5)
+        ttk.Button(frame_botoes, text="Dashboard", 
+              command=self.abrir_dashboard).pack(side=tk.LEFT, padx=5)
+        ttk.Button(frame_botoes, text="Gráficos", 
+                  command=self.mostrar_graficos).pack(side=tk.LEFT, padx=5)
+        ttk.Button(frame_botoes, text="Limpar", 
+                  command=self.limpar_dados).pack(side=tk.LEFT, padx=5)
+        
+        # Novo botão para importar lançamentos contábeis
+        ttk.Button(frame_botoes, text="Importar Lançamentos", 
+                  command=self.importar_lancamentos_contabeis).pack(side=tk.LEFT, padx=5)
+        
+    def criar_area_estatisticas(self):
+        self.frame_stats = ttk.LabelFrame(self.frame_principal, text="Estatísticas")
+        self.frame_stats.pack(fill=tk.X, pady=5)
+        
+        self.label_total_banco = ttk.Label(self.frame_stats, text="Total Banco: Kz 0,00")
+        self.label_total_banco.pack(side=tk.LEFT, padx=10)
+        
+        self.label_total_livro = ttk.Label(self.frame_stats, text="Total Livro: Kz 0,00")
+        self.label_total_livro.pack(side=tk.LEFT, padx=10)
+        
+        self.label_diferenca = ttk.Label(self.frame_stats, text="Diferença: Kz 0,00")
+        self.label_diferenca.pack(side=tk.LEFT, padx=10)
+        
+    def criar_tabela(self):
+        frame_tabela = ttk.Frame(self.frame_principal)
+        frame_tabela.pack(fill=tk.BOTH, expand=True, pady=5)
+        
+        # Definir colunas
+        colunas = ('data', 'descricao', 'valor', 'origem', 'status')
+        self.tabela = ttk.Treeview(frame_tabela, columns=colunas, show='headings')
+        
+        # Configurar cabeçalhos
+        self.tabela.heading('data', text='Data')
+        self.tabela.heading('descricao', text='Descrição')
+        self.tabela.heading('valor', text='Valor')
+        self.tabela.heading('origem', text='Origem')
+        self.tabela.heading('status', text='Status')
+        
+        # Configurar larguras
+        self.tabela.column('data', width=100)
+        self.tabela.column('descricao', width=400)
+        self.tabela.column('valor', width=150)
+        self.tabela.column('origem', width=100)
+        self.tabela.column('status', width=100)
+        
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(frame_tabela, orient=tk.VERTICAL, 
+                                command=self.tabela.yview)
+        self.tabela.configure(yscrollcommand=scrollbar.set)
+        
+        # Layout
+        self.tabela.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+    def criar_menu(self):
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+        
+        # Menu Arquivo
+        menu_arquivo = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Arquivo", menu=menu_arquivo)
+        menu_arquivo.add_command(label="Importar Banco", command=self.importar_banco)
+        menu_arquivo.add_command(label="Importar Livro", command=self.importar_livro)
+        menu_arquivo.add_command(label="Importar Lançamentos Contábeis", 
+                               command=self.importar_lancamentos_contabeis)
+        menu_arquivo.add_separator()
+        menu_arquivo.add_command(label="Configurações", command=self.configuracoes.abrir_gestor)
+        menu_arquivo.add_separator()
+        menu_arquivo.add_command(label="Sair", command=self.root.quit)
+        
+        # Menu Relatórios
+        menu_relatorios = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Relatórios", menu=menu_relatorios)
+        menu_relatorios.add_command(label="Relatório Diário", 
+                                  command=self.gerar_relatorio_diario)
+        menu_relatorios.add_command(label="Relatório Mensal", 
+                                  command=self.gerar_relatorio_mensal)
+        menu_relatorios.add_command(label="Relatório de Divergências", 
+                                  command=self.gerar_relatorio_divergencias)
+        
+        # Menu Contabilidade
+        menu_contabilidade = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Contabilidade", menu=menu_contabilidade)
+        menu_contabilidade.add_command(label="Balanço Patrimonial", command=self.gerar_balanco)
+        menu_contabilidade.add_command(label="DRE", command=self.gerar_dre)
+        menu_contabilidade.add_command(label="Livro Razão", command=self.gerar_livro_razao)
+        menu_contabilidade.add_command(label="RAÇU", command=self.gerar_racu)
+        menu_contabilidade.add_command(label="Fluxo de Caixa", command=self.gerar_fluxo_caixa)
+        menu_contabilidade.add_separator()
+        menu_contabilidade.add_command(label="Registrar Bem Amortizável", 
+                                     command=self.registrar_bem_amortizavel)
+        menu_contabilidade.add_command(label="Lançamentos Recorrentes", 
+                                     command=self.lancamentos_recorrentes.abrir_gestor)
+        menu_contabilidade.add_command(label="Classificar Lançamentos Contábeis", command=self.classificar_lancamentos_contabeis)
+        
+        # Menu Ferramentas
+        menu_ferramentas = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Ferramentas", menu=menu_ferramentas)
+        menu_ferramentas.add_command(label="Gerenciador de Temas", 
+                                   command=self.gerenciador_temas.abrir_gestor)
+        menu_ferramentas.add_command(label="Backup", command=self.realizar_backup)
+        menu_ferramentas.add_command(label="Restaurar Backup", command=self.restaurar_backup)
+        
+        # Menu Ajuda
+        menu_ajuda = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Ajuda", menu=menu_ajuda)
+        menu_ajuda.add_command(label="Sobre", command=self.mostrar_sobre)
+        menu_ajuda.add_command(label="Manual do Usuário", command=self.abrir_manual)
+
+    def gerar_livro_razao(self):
+        if not self.validar_dados():
+            return
+            
+        # Solicitar período
+        data_inicio_str = simpledialog.askstring("Data Inicial", "Informe a data inicial (DD/MM/AAAA):")
+        data_fim_str = simpledialog.askstring("Data Final", "Informe a data final (DD/MM/AAAA):")
+        
+        try:
+            data_inicio = datetime.strptime(data_inicio_str, "%d/%m/%Y")
+            data_fim = datetime.strptime(data_fim_str, "%d/%m/%Y")
+        except:
+            messagebox.showerror("Erro", "Data inválida!")
+            return
+            
+        # Gerar livro razão
+        caminho = f"livro_razao_{data_inicio.strftime('%Y%m%d')}_{data_fim.strftime('%Y%m%d')}.pdf"
+        if self.contabilidade.gerar_livro_razao(data_inicio, data_fim, caminho):
+            messagebox.showinfo("Sucesso", f"Livro Razão gerado: {caminho}")
+        
+    def gerar_racu(self):
+        if not self.validar_dados():
+            return
+            
+        # Solicitar ano
+        ano_str = simpledialog.askstring("Ano", "Informe o ano do RAÇU:")
+        try:
+            ano = int(ano_str)
+            if ano < 2000 or ano > 2100:
+                raise ValueError("Ano inválido")
+        except:
+            messagebox.showerror("Erro", "Ano inválido!")
+            return
+            
+        # Gerar RAÇU
+        caminho = f"racu_{ano}.pdf"
+        if self.contabilidade.gerar_racu(ano, caminho):
+            messagebox.showinfo("Sucesso", f"RAÇU gerado: {caminho}")
+        
+    def gerar_fluxo_caixa(self):
+        if not self.validar_dados():
+            return
+            
+        # Solicitar período
+        data_inicio_str = simpledialog.askstring("Data Inicial", "Informe a data inicial (DD/MM/AAAA):")
+        data_fim_str = simpledialog.askstring("Data Final", "Informe a data final (DD/MM/AAAA):")
+        
+        try:
+            data_inicio = datetime.strptime(data_inicio_str, "%d/%m/%Y")
+            data_fim = datetime.strptime(data_fim_str, "%d/%m/%Y")
+        except:
+            messagebox.showerror("Erro", "Data inválida!")
+            return
+            
+        # Gerar fluxo de caixa
+        caminho = f"fluxo_caixa_{data_inicio.strftime('%Y%m%d')}_{data_fim.strftime('%Y%m%d')}.pdf"
+        if self.contabilidade.gerar_fluxo_caixa(data_inicio, data_fim, caminho):
+            messagebox.showinfo("Sucesso", f"Fluxo de Caixa gerado: {caminho}")
+        
+    def importar_banco(self):
+        arquivo = filedialog.askopenfilename(
+            filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")]
+        )
+        
+        if arquivo:
+            self.selecionar_banco(arquivo)
+            
+    def selecionar_banco(self, arquivo):
+        janela = tk.Toplevel(self.root)
+        janela.title("Selecionar Banco")
+        janela.geometry("300x200")
+        
+        banco_var = tk.StringVar()
+        
+        for banco in CONFIGURACOES['BANCOS'].keys():
+            ttk.Radiobutton(
+                janela,
+                text=CONFIGURACOES['BANCOS'][banco]['nome'],
+                variable=banco_var,
+                value=banco
+            ).pack(pady=5)
+            
+        def processar():
+            banco = banco_var.get()
+            try:
+                self.dados_banco = ProcessadorBanco.processar_extrato(arquivo, banco)
+                self.atualizar_interface()
+                messagebox.showinfo("Sucesso", "Dados bancários importados com sucesso!")
+                janela.destroy()
+            except Exception as e:
+                messagebox.showerror("Erro", str(e))
+                
+        ttk.Button(janela, text="Importar", command=processar).pack(pady=10)
+        
+    def importar_livro(self):
+        arquivo = filedialog.askopenfilename(
+            filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")]
+        )
+        if arquivo:
+            try:
+                self.dados_livro = pd.read_excel(arquivo) if arquivo.endswith('.xlsx') \
+                    else pd.read_csv(arquivo)
+                self.atualizar_interface()
+                messagebox.showinfo("Sucesso", "Livro contábil importado com sucesso!")
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao importar arquivo: {str(e)}")
+                
+    def atualizar_interface(self):
+        self.atualizar_estatisticas()
+        self.atualizar_tabela()
+        
+        # Atualiza a contabilidade com os dados mais recentes
+        if self.dados_banco is not None and self.dados_livro is not None:
+            self.contabilidade.dados_banco = self.dados_banco
+            self.contabilidade.dados_livro = self.dados_livro
+        
+    def atualizar_estatisticas(self):
+        if self.dados_banco is not None:
+            total_banco = self.dados_banco['valor'].sum()
+            self.label_total_banco.config(
+                text=f"Total Banco: Kz {total_banco:,.2f}")
+            
+        if self.dados_livro is not None:
+            total_livro = self.dados_livro['valor'].sum()
+            self.label_total_livro.config(
+                text=f"Total Livro: Kz {total_livro:,.2f}")
+            
+        if self.dados_banco is not None and self.dados_livro is not None:
+            diferenca = total_banco - total_livro
+            self.label_diferenca.config(
+                text=f"Diferença: Kz {diferenca:,.2f}")
+            
+    def atualizar_tabela(self):
+        self.tabela.delete(*self.tabela.get_children())
+        
+        if self.dados_banco is not None:
+            for _, row in self.dados_banco.iterrows():
+                self.tabela.insert('', 'end', values=(
+                    row['data'].strftime('%d/%m/%Y'),
+                    row['descricao'],
+                    f"Kz {row['valor']:,.2f}",
+                    'BANCO',
+                    'PENDENTE'
+                ))
+                
+        if self.dados_livro is not None:
+            for _, row in self.dados_livro.iterrows():
+                self.tabela.insert('', 'end', values=(
+                    row['data'].strftime('%d/%m/%Y'),
+                    row['descricao'],
+                    f"Kz {row['valor']:,.2f}",
+                    'LIVRO',
+                    'PENDENTE'
+                ))
+                
+    def conciliar(self):
+        if not self.validar_dados():
+            return
+            
+        for _, row_banco in self.dados_banco.iterrows():
+            match = self.dados_livro[
+                (self.dados_livro['valor'] == row_banco['valor']) &
+                (self.dados_livro['data'] == row_banco['data'])
+            ]
+            if not match.empty:
+                # Atualizar status na tabela
+                for item in self.tabela.get_children():
+                    valores = self.tabela.item(item)['values']
+                    if (valores[0] == row_banco['data'].strftime('%d/%m/%Y') and
+                        valores[2] == f"Kz {row_banco['valor']:,.2f}"):
+                        self.tabela.set(item, 'status', 'CONCILIADO')
+                        
+    def mostrar_graficos(self):
+        if not self.validar_dados():
+            return
+            
+        janela = tk.Toplevel(self.root)
+        janela.title("Análise Gráfica")
+        janela.geometry("1000x600")
+        
+        fig = plt.Figure(figsize=(12, 6))
+        
+        # Gráfico de barras
+        ax1 = fig.add_subplot(121)
+        totais = [self.dados_banco['valor'].sum(), self.dados_livro['valor'].sum()]
+        ax1.bar(['Banco', 'Livro'], totais)
+        ax1.set_title('Comparativo de Totais')
+        
+        # Gráfico de evolução temporal
+        ax2 = fig.add_subplot(122)
+        ax2.plot(self.dados_banco['data'], self.dados_banco['valor'].cumsum(), 
+                label='Banco')
+        ax2.plot(self.dados_livro['data'], self.dados_livro['valor'].cumsum(), 
+                label='Livro')
+        ax2.set_title('Evolução Temporal')
+        ax2.legend()
+        plt.xticks(rotation=45)
+        
+        canvas = FigureCanvasTkAgg(fig, master=janela)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        
+    def gerar_relatorio_diario(self):
+        if not self.validar_dados():
+            return
+            
+        caminho = f"relatorio_diario_{datetime.now().strftime('%Y%m%d')}.pdf"
+        self.gerador_relatorios.gerar_relatorio_diario(
+            self.dados_banco, 
+            self.dados_livro, 
+            caminho
+        )
+        messagebox.showinfo("Sucesso", f"Relatório gerado: {caminho}")
+        
+    def gerar_relatorio_mensal(self):
+        if not self.validar_dados():
+            return
+            
+        dados_mensais = {
+            'banco': self.dados_banco.groupby(
+                self.dados_banco['data'].dt.strftime('%Y-%m'))['valor'].sum(),
+            'livro': self.dados_livro.groupby(
+                self.dados_livro['data'].dt.strftime('%Y-%m'))['valor'].sum()
+        }
+        
+        caminho = f"relatorio_mensal_{datetime.now().strftime('%Y%m')}.pdf"
+        self.gerador_relatorios.gerar_relatorio_mensal(dados_mensais, caminho)
+        messagebox.showinfo("Sucesso", f"Relatório gerado: {caminho}")
+        
+    def gerar_relatorio_divergencias(self):
+        if not self.validar_dados():
+            return
+            
+        divergencias = []
+        for _, row_banco in self.dados_banco.iterrows():
+            match = self.dados_livro[
+                (self.dados_livro['valor'] == row_banco['valor']) &
+                (self.dados_livro['data'] == row_banco['data'])
+            ]
+            if match.empty:
+                divergencias.append({
+                    'data': row_banco['data'],
+                    'descricao': row_banco['descricao'],
+                    'valor': row_banco['valor'],
+                    'origem': 'BANCO'
+                })
+                
+        caminho = f"relatorio_divergencias_{datetime.now().strftime('%Y%m%d')}.pdf"
+        self.gerador_relatorios.gerar_relatorio_divergencias(divergencias, caminho)
+        messagebox.showinfo("Sucesso", f"Relatório gerado: {caminho}")
+        
+    def validar_dados(self):
+        if self.dados_banco is None or self.dados_livro is None:
+            messagebox.showwarning("Aviso", "Importe todos os dados primeiro!")
+            return False
+        return True
+        
+    def limpar_dados(self):
+        self.dados_banco = None
+        self.dados_livro = None
+        self.tabela.delete(*self.tabela.get_children())
+        self.atualizar_estatisticas()
+        messagebox.showinfo("Sucesso", "Dados limpos com sucesso!")
+        
+    def gerar_balanco(self):
+        if not self.validar_dados():
+            return
+            
+        # Atualiza os dados da contabilidade
+        self.contabilidade.dados_banco = self.dados_banco
+        self.contabilidade.dados_livro = self.dados_livro
+    
+        # Solicita a data de referência
+        data_str = simpledialog.askstring("Data", "Informe a data de referência (DD/MM/AAAA):")
+        try:
+            data_ref = datetime.strptime(data_str, "%d/%m/%Y")
+        except:
+            messagebox.showerror("Erro", "Data inválida!")
+            return
+        if not self.contabilidade.lancamentos:
+            #
+        # Perguntar se deseja classificar os lançamentos
+            if messagebox.askyesno("Classificação Contábil", 
+                                  "É necessário classificar os lançamentos em contas contábeis. Deseja fazer isso agora?"):
+                self.classificar_lancamentos_contabeis()
+            else:
+                
+            # Tentar converter automaticamente
+                self.contabilidade.converter_dados_para_lancamentos()
+            
+        # Gera o balanço
+        caminho = f"balanco_patrimonial_{data_ref.strftime('%Y%m%d')}.pdf"
+        if self.contabilidade.gerar_balanco_patrimonial(data_ref, caminho):
+            messagebox.showinfo("Sucesso", f"Balanço gerado: {caminho}")
+        
+    def gerar_dre(self):
+        if not self.validar_dados():
+            return
+            
+        # Atualiza os dados da contabilidade
+        self.contabilidade.dados_banco = self.dados_banco
+        self.contabilidade.dados_livro = self.dados_livro
+        
+        # Solicita o período
+        data_inicio_str = simpledialog.askstring("Data Inicial", "Informe a data inicial (DD/MM/AAAA):")
+        data_fim_str = simpledialog.askstring("Data Final", "Informe a data final (DD/MM/AAAA):")
+    
+        try:
+            data_inicio = datetime.strptime(data_inicio_str, "%d/%m/%Y")
+            data_fim = datetime.strptime(data_fim_str, "%d/%m/%Y")
+        except:
+            messagebox.showerror("Erro", "Data inválida!")
+            return
+            
+        # Gera a DRE
+        caminho = f"dre_{data_inicio.strftime('%Y%m%d')}_{data_fim.strftime('%Y%m%d')}.pdf"
+        if self.contabilidade.gerar_dre(data_inicio, data_fim, caminho):
+            messagebox.showinfo("Sucesso", f"DRE gerada: {caminho}")
+        
+    def importar_lancamentos_contabeis(self):
+        arquivo = filedialog.askopenfilename(
+            filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")]
+        )
+        
+        if not arquivo:
+            return
+            
+        try:
+            # Importar os dados do arquivo
+            if arquivo.endswith('.xlsx'):
+                lancamentos = pd.read_excel(arquivo)
+            else:
+                lancamentos = pd.read_csv(arquivo, encoding='utf-8')
+            
+            # Verificar se as colunas necessárias existem
+            colunas_necessarias = ['data', 'descricao', 'valor']
+            colunas_faltantes = [col for col in colunas_necessarias if col not in lancamentos.columns]
+            
+            if colunas_faltantes:
+                # Tentar mapear colunas com nomes similares
+                mapeamento = {
+                    'data': ['data', 'date', 'dt', 'data_lancamento', 'data_lançamento'],
+                    'descricao': ['descricao', 'descrição', 'desc', 'historico', 'histórico', 'narrativa'],
+                    'valor': ['valor', 'value', 'montante', 'quantia', 'amount']
+                }
+                
+                for col_necessaria in colunas_faltantes:
+                    for col_alternativa in mapeamento[col_necessaria]:
+                        if col_alternativa in lancamentos.columns:
+                            lancamentos.rename(columns={col_alternativa: col_necessaria}, inplace=True)
+                            break
+                
+                # Verificar novamente se todas as colunas necessárias existem
+                colunas_faltantes = [col for col in colunas_necessarias if col not in lancamentos.columns]
+                if colunas_faltantes:
+                    messagebox.showerror("Erro", f"O arquivo não contém as colunas necessárias: {', '.join(colunas_faltantes)}")
+                    return
+            
+            # Converter a coluna de data para datetime
+            try:
+                if not pd.api.types.is_datetime64_any_dtype(lancamentos['data']):
+                    # Tentar diferentes formatos de data
+                    formatos_data = ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y']
+                    convertido = False
+                    
+                    for formato in formatos_data:
+                        try:
+                            lancamentos['data'] = pd.to_datetime(lancamentos['data'], format=formato)
+                            convertido = True
+                            break
+                        except:
+                            continue
+                    
+                    if not convertido:
+                        # Tentar conversão automática
+                        lancamentos['data'] = pd.to_datetime(lancamentos['data'], errors='coerce')
+                        
+                        # Verificar se há datas inválidas (NaT)
+                        if lancamentos['data'].isna().any():
+                            messagebox.showwarning("Aviso", "Algumas datas não puderam ser convertidas e serão ignoradas.")
+                            lancamentos = lancamentos.dropna(subset=['data'])
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao converter datas: {str(e)}")
+                return
+            
+            # Garantir que a coluna valor seja numérica
+            try:
+                if not pd.api.types.is_numeric_dtype(lancamentos['valor']):
+                    # Remover caracteres não numéricos (exceto ponto e vírgula)
+                    lancamentos['valor'] = lancamentos['valor'].astype(str)
+                    lancamentos['valor'] = lancamentos['valor'].str.replace('[^\d.,]', '', regex=True)
+                    # Substituir vírgula por ponto
+                    lancamentos['valor'] = lancamentos['valor'].str.replace(',', '.')
+                    # Converter para float
+                    lancamentos['valor'] = pd.to_numeric(lancamentos['valor'], errors='coerce')
+                    
+                    # Verificar se há valores inválidos (NaN)
+                    if lancamentos['valor'].isna().any():
+                        messagebox.showwarning("Aviso", "Alguns valores não puderam ser convertidos e serão ignorados.")
+                        lancamentos = lancamentos.dropna(subset=['valor'])
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao converter valores: {str(e)}")
+                return
+            
+            # Adicionar coluna de origem se não existir
+            if 'origem' not in lancamentos.columns:
+                lancamentos['origem'] = 'LIVRO'
+            
+            # Adicionar coluna de status se não existir
+            if 'status' not in lancamentos.columns:
+                lancamentos['status'] = 'PENDENTE'
+            
+            # Atualizar os dados do livro
+            if self.dados_livro is None:
+                self.dados_livro = lancamentos
+            else:
+                # Verificar se há lançamentos duplicados
+                chaves_existentes = set()
+                if not self.dados_livro.empty:
+                    for _, row in self.dados_livro.iterrows():
+                        chaves_existentes.add((row['data'], row['descricao'], row['valor']))
+                    lancamentos_novos = lancamentos[~lancamentos.apply(
+                    lambda row: (row['data'], row['descricao'], row['valor']) in chaves_existentes, 
+                    axis=1
+                )]
+                
+                if lancamentos_novos.empty:
+                    messagebox.showinfo("Informação", "Todos os lançamentos já existem no sistema.")
+                    return
+                    
+                self.dados_livro = pd.concat([self.dados_livro, lancamentos_novos], ignore_index=True)
+                
+                # Informar quantos lançamentos foram importados
+                messagebox.showinfo("Sucesso", f"{len(lancamentos_novos)} novos lançamentos importados com sucesso!")
+            
+            # Atualizar a interface
+            self.atualizar_interface()
+            
+            # Atualizar a contabilidade com os novos dados
+            if hasattr(self, 'contabilidade'):
+                self.contabilidade.dados_livro = self.dados_livro
+                
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao importar lançamentos: {str(e)}")
+            # Mostrar detalhes do erro para depuração
+            import traceback
+            print(traceback.format_exc())
+                
+    def registrar_bem_amortizavel(self):
+        # Cria uma janela para entrada de dados
+        janela = tk.Toplevel(self.root)
+        janela.title("Registrar Bem Amortizável")
+        janela.geometry("400x300")
+    
+        ttk.Label(janela, text="Código:").grid(row=0, column=0, padx=5, pady=5)
+        codigo_var = tk.StringVar()
+        ttk.Entry(janela, textvariable=codigo_var).grid(row=0, column=1, padx=5, pady=5)
+    
+        ttk.Label(janela, text="Descrição:").grid(row=1, column=0, padx=5, pady=5)
+        descricao_var = tk.StringVar()
+        ttk.Entry(janela, textvariable=descricao_var).grid(row=1, column=1, padx=5, pady=5)
+    
+        ttk.Label(janela, text="Valor:").grid(row=2, column=0, padx=5, pady=5)
+        valor_var = tk.DoubleVar()
+        ttk.Entry(janela, textvariable=valor_var).grid(row=2, column=1, padx=5, pady=5)
+    
+        ttk.Label(janela, text="Data Aquisição:").grid(row=3, column=0, padx=5, pady=5)
+        data_var = tk.StringVar()
+        ttk.Entry(janela, textvariable=data_var).grid(row=3, column=1, padx=5, pady=5)
+    
+        ttk.Label(janela, text="Vida Útil (anos):").grid(row=4, column=0, padx=5, pady=5)
+        vida_util_var = tk.IntVar()
+        ttk.Entry(janela, textvariable=vida_util_var).grid(row=4, column=1, padx=5, pady=5)
+    
+        ttk.Label(janela, text="Valor Residual:").grid(row=5, column=0, padx=5, pady=5)
+        residual_var = tk.DoubleVar()
+        ttk.Entry(janela, textvariable=residual_var).grid(row=5, column=1, padx=5, pady=5)
+        
+        def registrar():
+            try:
+                codigo = codigo_var.get()
+                descricao = descricao_var.get()
+                valor = valor_var.get()
+                data = datetime.strptime(data_var.get(), "%d/%m/%Y")
+                vida_util = vida_util_var.get()
+                residual = residual_var.get()
+            
+                self.contabilidade.registrar_bem_amortizavel(
+                    codigo, descricao, valor, data, vida_util, residual)
+            
+                messagebox.showinfo("Sucesso", "Bem amortizável registrado com sucesso!")
+                janela.destroy()
+            except Exception as e:
+                messagebox.showerror("Erro", str(e))
+                
+        ttk.Button(janela, text="Registrar", command=registrar).grid(row=6, column=1, pady=10)
+        
+    def realizar_backup(self):
+        """Realiza backup dos dados do sistema"""
+        diretorio = self.configuracoes.obter_config("sistema", "diretorio_backup")
+        if not diretorio or not os.path.exists(diretorio):
+            diretorio = filedialog.askdirectory(title="Selecionar Diretório para Backup")
+            if not diretorio:
+                return
+            self.configuracoes.definir_config("sistema", "diretorio_backup", diretorio)
+        
+        try:
+            # Implementar lógica de backup
+            data_hora = datetime.now().strftime("%Y%m%d_%H%M%S")
+            arquivo_backup = os.path.join(diretorio, f"backup_{data_hora}.zip")
+            
+            with zipfile.ZipFile(arquivo_backup, 'w') as zip_file:
+                # Adicionar arquivos de configuração
+                if os.path.exists(self.configuracoes.arquivo_config):
+                    zip_file.write(self.configuracoes.arquivo_config)
+                    
+                # Adicionar arquivos de temas
+                if os.path.exists(self.gerenciador_temas.arquivo_temas):
+                    zip_file.write(self.gerenciador_temas.arquivo_temas)
+                    
+                # Adicionar arquivos de dados
+                for arquivo in glob.glob("*.json") + glob.glob("*.xlsx") + glob.glob("*.csv"):
+                    zip_file.write(arquivo)
+                    
+            messagebox.showinfo("Sucesso", f"Backup realizado com sucesso!\nArquivo: {arquivo_backup}")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao realizar backup: {str(e)}")
+
+    def restaurar_backup(self):
+        """Restaura um backup anterior"""
+        arquivo = filedialog.askopenfilename(
+            title="Selecionar Arquivo de Backup",
+            filetypes=[("Arquivos ZIP", "*.zip")]
+        )
+        
+        if not arquivo:
+            return
+            
+        try:
+            # Criar diretório temporário
+            temp_dir = tempfile.mkdtemp()
+            
+            # Extrair backup
+            with zipfile.ZipFile(arquivo, 'r') as zip_file:
+                zip_file.extractall(temp_dir)
+                
+            # Perguntar antes de sobrescrever
+            if not messagebox.askyesno("Confirmar", "Esta operação irá sobrescrever os dados atuais. Continuar?"):
+                shutil.rmtree(temp_dir)
+                return
+                
+            # Copiar arquivos de volta
+            for arquivo_temp in os.listdir(temp_dir):
+                caminho_temp = os.path.join(temp_dir, arquivo_temp)
+                shutil.copy2(caminho_temp, os.path.join(os.getcwd(), arquivo_temp))
+                
+            # Limpar diretório temporário
+            shutil.rmtree(temp_dir)
+            
+            messagebox.showinfo("Sucesso", "Backup restaurado com sucesso! O sistema será reiniciado.")
+            
+            # Reiniciar aplicação
+            self.root.destroy()
+            os.execl(sys.executable, sys.executable, *sys.argv)
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao restaurar backup: {str(e)}")
+            
+    def mostrar_sobre(self):
+        """Exibe informações sobre o sistema"""
+        janela = tk.Toplevel(self.root)
+        janela.title("Sobre o Sistema")
+        janela.geometry("400x300")
+        janela.transient(self.root)
+        
+        # Aplicar tema atual
+        if hasattr(self, 'gerenciador_temas'):
+            self.gerenciador_temas.aplicar_tema_janela(janela)
+        
+        # Frame principal
+        frame = ttk.Frame(janela, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Logo (placeholder)
+        ttk.Label(frame, text="[LOGO]", font=('Helvetica', 24)).pack(pady=10)
+        
+        # Informações
+        ttk.Label(frame, text="Sistema de Reconciliação Contábil", 
+                 font=('Helvetica', 14, 'bold')).pack(pady=5)
+        ttk.Label(frame, text="Versão 1.0.0").pack()
+        ttk.Label(frame, text="© 2023 - Todos os direitos reservados").pack(pady=10)
+        
+        # Informações da empresa
+        nome_empresa = self.configuracoes.obter_config("empresa", "nome")
+        if nome_empresa:
+            ttk.Label(frame, text=f"Licenciado para: {nome_empresa}").pack()
+        
+        # Botão fechar
+        ttk.Button(frame, text="Fechar", command=janela.destroy).pack(pady=10)
+
+    def abrir_manual(self):
+        """Abre o manual do usuário"""
+        # Verificar se o manual existe
+        caminho_manual = "manual_usuario.pdf"
+        if not os.path.exists(caminho_manual):
+            messagebox.showinfo("Informação", "Manual do usuário não encontrado.")
+            return
+            
+        # Abrir o manual com o programa padrão
+        sistema = platform.system()
+        try:
+            if sistema == 'Windows':
+                os.startfile(caminho_manual)
+            elif sistema == 'Darwin':  # macOS
+                subprocess.call(['open', caminho_manual])
+            else:  # Linux e outros
+                subprocess.call(['xdg-open', caminho_manual])
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao abrir o manual: {str(e)}")
+            
+    def executar(self):
+        """Inicia a execução do aplicativo"""
+        self.root.mainloop()
+        
+        
+if __name__ == "__main__":
+    app = ReconciliacaoApp()
+    app.executar()
