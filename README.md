@@ -56,3 +56,4 @@ Profissionais de contabilidade
 Gestores financeiros
 Empresários
 Desenvolvido para atender às necessidades específicas do mercado angolano com automação moderna e análise avançada
+
