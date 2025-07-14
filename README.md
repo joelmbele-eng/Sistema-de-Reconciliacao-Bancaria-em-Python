@@ -25,6 +25,7 @@ Balanço patrimonial automatizado
 Demonstração de resultados
 Fluxo de caixa histórico e projetado
 Relatórios personalizados em PDF
+![imagem alt](https://github.com/joelmbele-eng/Sistema-de-Reconciliacao-Bancaria-em-Python/blob/07387fb9358b7429c1c7d014c012005911acfbee/16.PNG)
 Dashboard com análises visuais
 🛠️ Funcionalidades Avançadas
 Gestão de ativos fixos com depreciação
