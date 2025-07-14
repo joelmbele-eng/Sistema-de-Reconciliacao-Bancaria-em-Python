@@ -28,6 +28,8 @@ Relatórios personalizados em PDF
 Dashboard com análises visuais
 🛠️ Funcionalidades Avançadas
 Gestão de ativos fixos com depreciação
+# Modelo Arima
+![imagem alt](https://github.com/joelmbele-eng/Sistema-de-Reconciliacao-Bancaria-em-Python/blob/fc5ed6fb4aacf616865885275169700dfc92b54d/analise.jpg)
 Lançamentos recorrentes
 Orçamento vs. realizado
 Projeções de fluxo de caixa
