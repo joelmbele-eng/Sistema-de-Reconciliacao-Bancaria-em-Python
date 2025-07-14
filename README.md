@@ -31,6 +31,7 @@ Gestão de ativos fixos com depreciação
 # Modelo Arima
 ![imagem alt](https://github.com/joelmbele-eng/Sistema-de-Reconciliacao-Bancaria-em-Python/blob/fc5ed6fb4aacf616865885275169700dfc92b54d/analise.jpg)
 Lançamentos recorrentes
+![imagem alt](https://github.com/joelmbele-eng/Sistema-de-Reconciliacao-Bancaria-em-Python/blob/7ec5ba68317161e4bd9fb7fbe43c5623f27aa495/analise2.jpg)
 Orçamento vs. realizado
 Projeções de fluxo de caixa
 Auditoria completa
