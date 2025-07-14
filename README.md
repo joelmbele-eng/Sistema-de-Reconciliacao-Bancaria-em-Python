@@ -34,6 +34,7 @@ Gestão de ativos fixos com depreciação
 Lançamentos recorrentes
 ![imagem alt](https://github.com/joelmbele-eng/Sistema-de-Reconciliacao-Bancaria-em-Python/blob/7ec5ba68317161e4bd9fb7fbe43c5623f27aa495/analise2.jpg)
 Orçamento vs. realizado
+![imagem alt](https://github.com/joelmbele-eng/Sistema-de-Reconciliacao-Bancaria-em-Python/blob/0dc0f718e4ad77d7d49628c342ebff7344ef5cde/9.PNG)
 Projeções de fluxo de caixa
 Auditoria completa
 🖥️ Interface e Experiência
